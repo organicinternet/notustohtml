@@ -20,6 +20,7 @@ class NotusHtmlCodec extends Codec<Delta, String> {
 class _NotusHtmlEncoder extends Converter<Delta, String> {
   static const kBold = 'strong';
   static const kItalic = 'em';
+  static const kUnderline = 'u';
   static final kSimpleBlocks = <NotusAttribute, String>{
     NotusAttribute.bq: 'blockquote',
     NotusAttribute.ul: 'ul',
@@ -187,6 +188,8 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
       _writeBoldTag(buffer, close: close);
     } else if (attribute == NotusAttribute.italic) {
       _writeItalicTag(buffer, close: close);
+    } else if (attribute == NotusAttribute.underline) {
+      _writeUnderlineTag(buffer, close: close);
     } else if (attribute.key == NotusAttribute.link.key) {
       _writeLinkTag(buffer, attribute as NotusAttribute<String>, close: close);
     } else if (attribute.key == NotusAttribute.heading.key) {
@@ -206,6 +209,10 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
 
   void _writeItalicTag(StringBuffer buffer, {bool close = false}) {
     buffer.write(!close ? "<$kItalic>" : "</$kItalic>");
+  }
+
+  void _writeUnderlineTag(StringBuffer buffer, {bool close = false}) {
+    buffer.write(!close ? "<$kUnderline>" : "</$kUnderline>");
   }
 
   void _writeLinkTag(StringBuffer buffer, NotusAttribute<String> link,
@@ -368,6 +375,9 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       if (element.localName == "strong") {
         attributes["b"] = true;
       }
+      if (element.localName == "u") {
+        attributes["u"] = true;
+      }
       if (element.localName == "a") {
         attributes["a"] = element.attributes["href"];
       }
@@ -409,6 +419,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     "div": "block",
     "em": "inline",
     "strong": "inline",
+    "u": "inline",
     "a": "inline",
     "p": "inline",
     "img": "embed",

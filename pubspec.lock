@@ -186,9 +186,11 @@ packages:
   notus:
     dependency: "direct main"
     description:
-      name: notus
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "packages/notus/"
+      ref: master
+      resolved-ref: d5cd4f8550573cac76e30541d95044c5b1f31c1c
+      url: "git://github.com/organicinternet/zefyr.git"
+    source: git
     version: "0.1.5"
   package_config:
     dependency: transitive

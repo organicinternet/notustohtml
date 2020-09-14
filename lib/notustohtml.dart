@@ -21,6 +21,8 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
   static const kBold = 'strong';
   static const kItalic = 'em';
   static const kUnderline = 'u';
+  static const kSpan = 'span';
+  static const kDiv = 'div';
   static final kSimpleBlocks = <NotusAttribute, String>{
     NotusAttribute.bq: 'blockquote',
     NotusAttribute.ul: 'ul',
@@ -130,11 +132,18 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
     if (style.contains(NotusAttribute.heading)) {
       _writeAttribute(buffer, style.get<int>(NotusAttribute.heading));
     }
+    if (style.contains(NotusAttribute.div)) {
+      _writeAttribute(buffer, style.get<String>(NotusAttribute.div));
+    }
     // Write the text itself
     buffer.write(text);
     // Close the heading
     if (style.contains(NotusAttribute.heading)) {
       _writeAttribute(buffer, style.get<int>(NotusAttribute.heading),
+          close: true);
+    }
+    if (style.contains(NotusAttribute.div)) {
+      _writeAttribute(buffer, style.get<String>(NotusAttribute.div),
           close: true);
     }
     return buffer.toString();
@@ -190,6 +199,25 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
       _writeItalicTag(buffer, close: close);
     } else if (attribute == NotusAttribute.underline) {
       _writeUnderlineTag(buffer, close: close);
+    } else if (attribute.key == NotusAttribute.span.key) {
+      _writeSpanTag(buffer, attribute as NotusAttribute<String>, close: close);
+    } else if (attribute.key == NotusAttribute.div.key) {
+      if (['lightheader-one', 'lightheader-two', 'lightheader-three']
+          .contains(attribute.value)) {
+        _writeCustomHeadingTag(
+            buffer,
+            ['lightheader-one', 'lightheader-two', 'lightheader-three']
+                    .indexOf(attribute.value) +
+                1,
+            attribute as NotusAttribute<String>,
+            close: close);
+      } else if (['body-one', 'body-two', 'body-three', 'body-four', 'listed']
+          .contains(attribute.value)) {
+        _writeCustomPTag(buffer, attribute as NotusAttribute<String>,
+            close: close);
+      } else {
+        _writeDivTag(buffer, attribute as NotusAttribute<String>, close: close);
+      }
     } else if (attribute.key == NotusAttribute.link.key) {
       _writeLinkTag(buffer, attribute as NotusAttribute<String>, close: close);
     } else if (attribute.key == NotusAttribute.heading.key) {
@@ -213,6 +241,43 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
 
   void _writeUnderlineTag(StringBuffer buffer, {bool close = false}) {
     buffer.write(!close ? "<$kUnderline>" : "</$kUnderline>");
+  }
+
+  void _writeSpanTag(StringBuffer buffer, NotusAttribute<String> span,
+      {bool close = false}) {
+    if (close) {
+      buffer.write('</span>');
+    } else {
+      buffer.write('<span class="${span.value}">');
+    }
+  }
+
+  void _writeCustomHeadingTag(
+      StringBuffer buffer, int headingNumber, NotusAttribute<String> div,
+      {bool close = false}) {
+    if (close) {
+      buffer.write('</h$headingNumber>');
+    } else {
+      buffer.write('<h$headingNumber class="${div.value}">');
+    }
+  }
+
+  void _writeCustomPTag(StringBuffer buffer, NotusAttribute<String> div,
+      {bool close = false}) {
+    if (close) {
+      buffer.write('</p>');
+    } else {
+      buffer.write('<p class="${div.value}">');
+    }
+  }
+
+  void _writeDivTag(StringBuffer buffer, NotusAttribute<String> div,
+      {bool close = false}) {
+    if (close) {
+      buffer.write('</div>');
+    } else {
+      buffer.write('<div class="${div.value}">');
+    }
   }
 
   void _writeLinkTag(StringBuffer buffer, NotusAttribute<String> link,
@@ -323,13 +388,13 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     if (type == "block") {
       Map<String, dynamic> blockAttributes = {};
       if (inBlock != null) blockAttributes = inBlock;
-      if (element.localName == "h1") {
+      if (element.localName == "h1" && (element.className ?? '') == '') {
         blockAttributes["heading"] = 1;
       }
-      if (element.localName == "h2") {
+      if (element.localName == "h2" && (element.className ?? '') == '') {
         blockAttributes["heading"] = 2;
       }
-      if (element.localName == "h3") {
+      if (element.localName == "h3" && (element.className ?? '') == '') {
         blockAttributes["heading"] = 3;
       }
       if (element.localName == "blockquote") {
@@ -341,6 +406,15 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       if (element.localName == "li") {
         blockAttributes["block"] = listType;
       }
+      if (element.localName == "div") {
+        blockAttributes["div"] = element.attributes["class"];
+      }
+      if (element.localName == "h1" ||
+          element.localName == "h2" ||
+          element.localName == "h3") {
+        blockAttributes["div"] = element.attributes["class"];
+      }
+
       element.nodes.asMap().forEach((index, node) {
         var next;
         if (index + 1 < element.nodes.length) next = element.nodes[index + 1];
@@ -377,6 +451,9 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       }
       if (element.localName == "u") {
         attributes["u"] = true;
+      }
+      if (element.localName == "span") {
+        attributes["span"] = element.attributes["class"];
       }
       if (element.localName == "a") {
         attributes["a"] = element.attributes["href"];
@@ -420,6 +497,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     "em": "inline",
     "strong": "inline",
     "u": "inline",
+    "span": "inline",
     "a": "inline",
     "p": "inline",
     "img": "embed",

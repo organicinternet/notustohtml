@@ -411,6 +411,9 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       if (element.localName == "div") {
         blockAttributes["div"] = element.attributes["class"];
       }
+      if (element.localName == "p") {
+        blockAttributes["div"] = element.attributes["class"];
+      }
       if (element.localName == "h1" ||
           element.localName == "h2" ||
           element.localName == "h3") {
@@ -501,7 +504,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     "u": "inline",
     "span": "inline",
     "a": "inline",
-    "p": "inline",
+    "p": "block",
     "img": "embed",
     "hr": "embed",
   };

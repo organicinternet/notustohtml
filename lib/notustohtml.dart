@@ -366,7 +366,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
           element, delta, _supportedElements[element.localName],
           next: next, inList: inList, inBlock: inBlock);
       return delta;
-    } else {
+    } else if (node is Text) {
       Text text = node;
       if (next != null &&
           next.runtimeType == Element &&
@@ -375,6 +375,8 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       } else {
         delta..insert(text.text);
       }
+      return delta;
+    } else {
       return delta;
     }
   }

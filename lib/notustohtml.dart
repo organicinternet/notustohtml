@@ -216,7 +216,7 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
         _writeCustomPTag(buffer, attribute as NotusAttribute<String>,
             close: close);
       } else {
-        _writeDivTag(buffer, attribute as NotusAttribute<String>, close: close);
+        _writePTag(buffer, attribute as NotusAttribute<String>, close: close);
       }
     } else if (attribute.key == NotusAttribute.link.key) {
       _writeLinkTag(buffer, attribute as NotusAttribute<String>, close: close);
@@ -271,12 +271,12 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
     }
   }
 
-  void _writeDivTag(StringBuffer buffer, NotusAttribute<String> div,
+  void _writePTag(StringBuffer buffer, NotusAttribute<String> div,
       {bool close = false}) {
     if (close) {
-      buffer.write('</div>');
+      buffer.write('</p>');
     } else {
-      buffer.write('<div class="${div.value}">');
+      buffer.write('<p>');
     }
   }
 
@@ -412,7 +412,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
         blockAttributes["div"] = element.attributes["class"];
       }
       if (element.localName == "p") {
-        blockAttributes["div"] = element.attributes["class"];
+        blockAttributes["div"] = element.attributes["class"] ?? 'body-one';
       }
       if (element.localName == "h1" ||
           element.localName == "h2" ||
@@ -451,7 +451,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       if (element.localName == "em") {
         attributes["i"] = true;
       }
-      if (element.localName == "strong") {
+      if (element.localName == "strong" || element.localName == "b") {
         attributes["b"] = true;
       }
       if (element.localName == "u") {
@@ -501,6 +501,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     "div": "block",
     "em": "inline",
     "strong": "inline",
+    "b": "inline",
     "u": "inline",
     "span": "inline",
     "a": "inline",

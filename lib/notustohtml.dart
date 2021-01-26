@@ -466,8 +466,8 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       if (element.children.isEmpty) {
         if (attributes["a"] != null) {
           delta..insert(element.text, attributes);
-          if (inList == null || (inList != null && !inList))
-            delta..insert("\n");
+          if ((inList == null || (inList != null && !inList)) &&
+              inBlock == null) delta..insert("\n");
         } else {
           if (next != null &&
               next.runtimeType == Element &&

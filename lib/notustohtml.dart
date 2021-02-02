@@ -44,16 +44,16 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
       }
 
       if (blockStyle == null) {
-        buffer.write(currentBlockLines.join('\n\n'));
+        buffer.write(currentBlockLines.join(''));
         buffer.writeln();
       } else if (blockStyle == NotusAttribute.code) {
         _writeAttribute(buffer, blockStyle);
-        buffer.write(currentBlockLines.join('\n'));
+        buffer.write(currentBlockLines.join(''));
         _writeAttribute(buffer, blockStyle, close: true);
         buffer.writeln();
       } else if (blockStyle == NotusAttribute.bq) {
         _writeAttribute(buffer, blockStyle);
-        buffer.write(currentBlockLines.join('\n'));
+        buffer.write(currentBlockLines.join(''));
         _writeAttribute(buffer, blockStyle, close: true);
         buffer.writeln();
       } else if (blockStyle == NotusAttribute.ol ||
@@ -123,7 +123,7 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
       }
     }
     _handleBlock(currentBlockStyle); // Close the last block
-    return buffer.toString().replaceAll("\n", "<br>");
+    return buffer.toString().trim(); // .replaceAll("\n", "<br>");
   }
 
   String _writeLine(String text, NotusStyle style) {
@@ -131,8 +131,7 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
     // Open heading
     if (style.contains(NotusAttribute.heading)) {
       _writeAttribute(buffer, style.get<int>(NotusAttribute.heading));
-    }
-    if (style.contains(NotusAttribute.div)) {
+    } else if (style.contains(NotusAttribute.div)) {
       _writeAttribute(buffer, style.get<String>(NotusAttribute.div));
     }
     // Write the text itself
@@ -141,8 +140,7 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
     if (style.contains(NotusAttribute.heading)) {
       _writeAttribute(buffer, style.get<int>(NotusAttribute.heading),
           close: true);
-    }
-    if (style.contains(NotusAttribute.div)) {
+    } else if (style.contains(NotusAttribute.div)) {
       _writeAttribute(buffer, style.get<String>(NotusAttribute.div),
           close: true);
     }
@@ -299,9 +297,9 @@ class _NotusHtmlEncoder extends Converter<Delta, String> {
       {bool close = false}) {
     if (block == NotusAttribute.code) {
       if (!close) {
-        buffer.write('\n<code>');
+        buffer.write('<code>');
       } else {
-        buffer.write('</code>\n');
+        buffer.write('</code>');
       }
     } else {
       if (!close) {
@@ -412,7 +410,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
         blockAttributes["div"] = element.attributes["class"];
       }
       if (element.localName == "p") {
-        blockAttributes["div"] = element.attributes["class"] ?? 'body-one';
+        blockAttributes["div"] = element.attributes["class"] ?? '';
       }
       if (element.localName == "h1" ||
           element.localName == "h2" ||
@@ -448,7 +446,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
       return tempdocument.toDelta();
     } else {
       if (attributes == null) attributes = {};
-      if (element.localName == "em") {
+      if (element.localName == "em" || element.localName == "i") {
         attributes["i"] = true;
       }
       if (element.localName == "strong" || element.localName == "b") {
@@ -479,12 +477,14 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
         }
       } else {
         element.children.forEach((element) {
-          if (_supportedElements[element.localName] == null) {
+          if (element is Text) {
+            delta..insert(element.text);
+          } else if (_supportedElements[element.localName] == null) {
             return;
           }
           delta = _parseElement(
               element, delta, _supportedElements[element.localName],
-              attributes: attributes, next: next);
+              next: next);
         });
       }
       return delta;
@@ -500,6 +500,7 @@ class _NotusHtmlDecoder extends Converter<String, Delta> {
     "h3": "block",
     "div": "block",
     "em": "inline",
+    "i": "inline",
     "strong": "inline",
     "b": "inline",
     "u": "inline",
